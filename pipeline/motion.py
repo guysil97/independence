@@ -67,8 +67,10 @@ def _ecc(ref_g, cur_g, mask, H0, scales=(0.25, 0.5), model="homography"):
     return (H / H[2, 2]).astype(np.float64), float(cc)
 
 
-def track(grays: list[np.ndarray], regions: dict, ref: int, params: dict) -> dict:
-    """grays: uint8 frames. Returns {plane: {"H": [N,3,3], "inliers": [N], "n_ref": int}}."""
+def track(grays: list[np.ndarray], regions: dict, ref: int, params: dict, actor_masks=None) -> dict:
+    """grays: uint8 frames. actor_masks: optional per-frame bool masks of the actors (from
+    the protection mattes) excluded from tracking. Returns {plane: {"H": [N,3,3], ...}}."""
+    no_actor = (lambda m, i: m) if actor_masks is None else (lambda m, i: m * (~actor_masks[i]).astype(np.uint8))
     shape = grays[0].shape
     lk = dict(winSize=(31, 31), maxLevel=5,
               criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 40, 0.01))
@@ -77,8 +79,9 @@ def track(grays: list[np.ndarray], regions: dict, ref: int, params: dict) -> dic
     for plane in planes:
         model = regions.get("planes", {}).get(plane, {}).get("model", "homography")
         mask = _plane_mask(regions, plane, shape)
+        mask_ref = no_actor(mask, ref)
         p_ref = cv2.goodFeaturesToTrack(grays[ref], params["max_corners"], params["quality"],
-                                        params["min_distance"], mask=mask, blockSize=7)
+                                        params["min_distance"], mask=mask_ref, blockSize=7)
         if p_ref is None:
             p_ref = np.zeros((0, 1, 2), np.float32)
         N = len(grays)
@@ -92,7 +95,7 @@ def track(grays: list[np.ndarray], regions: dict, ref: int, params: dict) -> dic
             while 0 <= t < N:
                 prev = t - direction
                 p0 = cv2.goodFeaturesToTrack(grays[prev], params["max_corners"], params["quality"],
-                                             params["min_distance"], mask=mask, blockSize=7)
+                                             params["min_distance"], mask=no_actor(mask, prev), blockSize=7)
                 p1, st, _ = cv2.calcOpticalFlowPyrLK(grays[prev], grays[t], p0, None, **lk)
                 pb, stb, _ = cv2.calcOpticalFlowPyrLK(grays[t], grays[prev], p1, None, **lk)
                 ok = (st[:, 0] == 1) & (stb[:, 0] == 1) & (np.linalg.norm(pb - p0, axis=2)[:, 0] < 0.5)
@@ -109,7 +112,7 @@ def track(grays: list[np.ndarray], regions: dict, ref: int, params: dict) -> dic
                 if Hd is None or n < 30:
                     Hd = Hguess
                 # dense ECC refinement: robust on defocused, low-texture planes
-                He, cc = _ecc(grays[ref], grays[t], mask, Hd, model=model)
+                He, cc = _ecc(grays[ref], grays[t], mask_ref, Hd, model=model)
                 if He is not None and cc >= params.get("ecc_min_cc", 0.85):
                     Hs[t], inl[t], ecc[t] = He, n, cc
                 else:

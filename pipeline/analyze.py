@@ -266,9 +266,19 @@ def run(shot: str):
     cuts, resp = detect_cuts(grays)
     summary["cuts_in_range"] = cuts
 
+    # --- actor protection mattes from Step 2, if they exist (else the rough polygon)
+    pdir = config.work(cfg, "mattes", "protection")
+    pfiles = sorted(pdir.glob("*.png"))
+    actor_masks = None
+    if len(pfiles) == N:
+        k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (21, 21))
+        actor_masks = [cv2.dilate((cv2.imread(str(f), cv2.IMREAD_UNCHANGED) > 650).astype(np.uint8), k) > 0
+                       for f in pfiles]
+    summary["actor_exclusion"] = "protection mattes (+10 px)" if actor_masks else "actor_rough polygon"
+
     # --- motion
     mp = cfg["analysis"]["motion"]
-    tr = motion.track(grays, R, ref, mp)
+    tr = motion.track(grays, R, ref, mp, actor_masks)
     mot = {}
     fig, ax = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
     for plane, d in tr.items():
@@ -303,7 +313,12 @@ def run(shot: str):
         Y = pipe.luminance(lin)
         Hs = Hs_at(i)
         H = next(iter(Hs.values()))
-        Ys.append(cv2.warpPerspective(Y, np.linalg.inv(H), shape[::-1], flags=cv2.INTER_LINEAR) if i != ref else Y)
+        Yw = cv2.warpPerspective(Y, np.linalg.inv(H), shape[::-1], flags=cv2.INTER_LINEAR) if i != ref else Y
+        if actor_masks is not None:  # clean plate: actors never contribute to the median
+            occ = actor_masks[i].astype(np.uint8) if i == ref else cv2.warpPerspective(
+                actor_masks[i].astype(np.uint8), np.linalg.inv(H), shape[::-1], flags=cv2.INTER_NEAREST)
+            Yw = np.where(occ > 0, np.nan, Yw).astype(np.float32)
+        Ys.append(Yw)
         masks = rg.frame_masks(R, shape, Hs)
         for k in R["windows"]:
             sel = masks[k] > 0.99
@@ -321,13 +336,24 @@ def run(shot: str):
         L["highlight_p99.99_lin_rgb"] = [float(x) for x in pipe.to_linear(p1)]
         L["max_lin"] = float(pipe.to_linear(np.float32(L["max_code"])))
     summary["levels"] = levels
-    Ymed = np.median(np.stack(Ys), 0).astype(np.float32)
+    stack = np.stack(Ys)
     del Ys
+    clean_count = np.isfinite(stack).sum(0)
+    Ymed = np.nanmedian(stack, 0).astype(np.float32) if actor_masks is not None else np.median(stack, 0)
+    del stack
+    min_samples = cfg["analysis"].get("clean_plate_min_frames", 5)
+    clean_valid = clean_count >= min_samples
 
     # --- blinds + transmission (ref coords)
     masks_ref = rg.frame_masks(R, shape)
     Yref_lin = pipe.luminance(pipe.to_linear(frames[ref]))
-    actor = rg.hard_mask(R["actor_rough"]["poly"], shape)
+    actor = (actor_masks[ref].astype(np.float32) if actor_masks is not None
+             else rg.hard_mask(R["actor_rough"]["poly"], shape))
+    # transmission source: the clean-plate median where enough actor-free frames exist,
+    # the reference frame elsewhere (pixels the actors cover for the whole take)
+    Ysrc = Yref_lin if actor_masks is None else np.where(clean_valid, np.nan_to_num(Ymed), Yref_lin)
+    summary["clean_plate_coverage_in_windows"] = (
+        float(clean_valid[masks_ref["windows_all"] > 0.5].mean()) if actor_masks is not None else None)
     blinds = {}
     T = np.zeros(shape, np.float32)
     fg_union = np.zeros(shape, np.float32)
@@ -336,12 +362,10 @@ def run(shot: str):
     for k, reg in R["windows"].items():
         if reg.get("kind", "blinds") != "blinds":
             continue
-        b = blinds_analysis(Ymed, masks_ref[k], actor)
+        b = blinds_analysis(np.nan_to_num(Ymed), masks_ref[k], actor)
         blinds[k] = b
         if b:
-            # until actor mattes exist the temporal median still contains the actors,
-            # so the map is built from the reference frame itself
-            T = np.maximum(T, transmission_map(Yref_lin, masks_ref[k], fg_union, b["slat_period_px"]))
+            T = np.maximum(T, transmission_map(Ysrc, masks_ref[k], fg_union, b["slat_period_px"]))
     for k, reg in R["windows"].items():
         if reg.get("kind") == "clear_glass":  # uniform transmission, foreground objects removed
             T = np.maximum(T, masks_ref[k])
@@ -349,7 +373,7 @@ def run(shot: str):
             # frosted pane: transmission follows its own (very smooth) luminance profile,
             # normalised to the pane's bright level; no slat or object structure
             m = masks_ref[k]
-            Ys = cv2.GaussianBlur(Yref_lin, (0, 0), 6)
+            Ys = cv2.GaussianBlur(Ysrc, (0, 0), 6)
             ref_level = np.percentile(Ys[m > 0.98], 95)
             T = np.maximum(T, np.clip(Ys / max(ref_level, 1e-6), 0, 1) * m)
     summary["blinds"] = blinds

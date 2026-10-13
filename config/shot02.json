@@ -56,32 +56,33 @@
     "sam_model": "base_plus",
     "dilate_px": 8,
     "gf_radius": 8,
-    "gf_eps": 0.001,
+    "gf_eps": 0.0001,
     "protect_px": 12,
     "temporal_side_weight": 0.25,
     "temporal_consistency": 12.0,
     "integrity_erode_px": 3,
     "qc_frames": {
       "0": [
-        1150,
-        330,
-        600
+        1120,
+        260,
+        440
       ],
       "60": [
-        1150,
-        330,
-        600
+        1080,
+        260,
+        440
       ],
       "140": [
-        1150,
-        330,
-        600
+        1180,
+        280,
+        440
       ],
-      "170": [
-        1150,
-        330,
-        600
+      "100": [
+        1280,
+        460,
+        440
       ]
-    }
+    },
+    "fill_holes_max_px": 6000
   }
 }

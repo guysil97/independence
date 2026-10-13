@@ -49,6 +49,24 @@ def _device():
 
 
 # --------------------------------------------------------------------------- SAM 2
+def _cpu_float_memory(pred):
+    """SAM 2 stores memory features as bfloat16 and relies on CUDA autocast to mix
+    dtypes; on CPU there is no autocast, so cast them back to float32."""
+    run_frame, run_mem = pred._run_single_frame_inference, pred._run_memory_encoder
+
+    def frame(*a, **k):
+        out, masks = run_frame(*a, **k)
+        if out.get("maskmem_features") is not None:
+            out["maskmem_features"] = out["maskmem_features"].float()
+        return out, masks
+
+    def mem(*a, **k):
+        feats, pos = run_mem(*a, **k)
+        return (feats.float() if feats is not None else None), pos
+
+    pred._run_single_frame_inference, pred._run_memory_encoder = frame, mem
+
+
 def run_sam(cfg):
     import torch
     from sam2.build_sam import build_sam2_video_predictor
@@ -59,11 +77,16 @@ def run_sam(cfg):
     dev = _device()
     torch.set_num_threads(os.cpu_count() or 4)
     pred = build_sam2_video_predictor(yaml, str(ckpt), device=dev)
+    if dev == "cpu":
+        _cpu_float_memory(pred)
     P = _prompts(cfg)
     jpg = config.work(cfg, "jpg")
     t0 = time.time()
     with torch.inference_mode():
-        state = pred.init_state(video_path=str(jpg), offload_video_to_cpu=True, offload_state_to_cpu=True)
+        # offloading state to CPU stores memory features as bfloat16, which breaks pure-CPU
+        # inference (and is pointless there); keep it for mps/cuda
+        state = pred.init_state(video_path=str(jpg), offload_video_to_cpu=True,
+                                offload_state_to_cpu=(dev != "cpu"))
         first = {}
         for p in P["prompts"]:
             oid = int(p["obj_id"])
@@ -101,11 +124,27 @@ def _guided_alpha(rgb, prob, mc):
     dil = cv2.dilate(hard, k).astype(np.float32)
     ero = cv2.erode(hard, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * d + 1, 2 * d + 1))).astype(np.float32)
     guide = np.clip(rgb ** (1 / 2.2), 0, 1).astype(np.float32)  # perceptual guide works better on dark plates
-    a = cv2.ximgproc.guidedFilter(guide, hard.astype(np.float32), int(mc.get("gf_radius", 8)),
-                                  float(mc.get("gf_eps", 1e-3)))
+    # filter the *dilated* mask: alpha reaches out into the band where the plate looks
+    # like the actor (frizzy hair) and falls back where it looks like the background
+    a = cv2.ximgproc.guidedFilter(guide, dil, int(mc.get("gf_radius", 8)), float(mc.get("gf_eps", 1e-4)))
     # the soft edge lives only in the dilated band; the eroded core is solid
     a = np.clip(a, 0, 1) * dil
     return np.maximum(a, ero)
+
+
+def _fill_holes(alpha, max_area):
+    """Enclosed gaps inside the actors' union (between an arm and a body) up to max_area px
+    are treated as actor: the safe side, since an effect must never land on a person."""
+    hard = (alpha > 0.5).astype(np.uint8)
+    n, lab, st, _ = cv2.connectedComponentsWithStats(1 - hard, connectivity=4)
+    h, w = hard.shape
+    out = alpha.copy()
+    for i in range(1, n):
+        x, y, bw, bh, a = st[i]
+        touches = x == 0 or y == 0 or x + bw >= w or y + bh >= h
+        if not touches and a <= max_area:
+            out[lab == i] = 1.0
+    return out
 
 
 def _flow(a, b):
@@ -142,6 +181,7 @@ def run_refine(cfg):
     objs = {int(k): v for k, v in P["objects"].items()}
     t0 = time.time()
     rgbs, grays, alphas = [], [], {o: [] for o in objs}
+    excl = None
     for i, f in enumerate(frames):
         rgb = tifffile.imread(f).astype(np.float32) / 65535.0
         rgbs.append(rgb)
@@ -150,9 +190,15 @@ def run_refine(cfg):
             pth = config.work(cfg, "mattes", "raw", f"obj{o}") / f"{i:05d}.png"
             prob = cv2.imread(str(pth), cv2.IMREAD_GRAYSCALE).astype(np.float32) / 255 if pth.exists() \
                 else np.zeros(rgb.shape[:2], np.float32)
+            if excl is None and P.get("exclude_polys"):  # where an actor cannot be (counter reflections)
+                from . import regions as rg
+                excl = np.max([rg.hard_mask(e["poly"], rgb.shape[:2]) for e in P["exclude_polys"]], 0)
+            if excl is not None:
+                prob = prob * (1 - excl)
             alphas[o].append(_guided_alpha(rgb, prob, mc))
     print(f"  guided filter {time.time() - t0:.0f}s")
-    union = [np.max([alphas[o][i] for o in objs if objs[o].get("protect", True)], 0) for i in range(N)]
+    union = [_fill_holes(np.max([alphas[o][i] for o in objs if objs[o].get("protect", True)], 0),
+                         int(mc.get("fill_holes_max_px", 6000))) for i in range(N)]
     # temporal stabilisation of the protection matte: flow-compensated [1/4, 1/2, 1/4] over +-1 frame,
     # accepted only where the warp is photometrically consistent (no lag on fast motion);
     # the current frame's own alpha is always fully inside the result.
@@ -242,15 +288,24 @@ def run_qc(cfg, frames_of_interest=None):
     vid_line.close()
     vid_red.close()
     for i, (cx, cy, half_w) in (frames_of_interest or {}).items():
-        line, red, al, rgb = render(int(i))
+        i = int(i)
+        line, red, al, rgb = render(i)
+        prot = cv2.imread(str(md / "protection" / f"{i:05d}.png"), cv2.IMREAD_UNCHANGED) / 65535.0
         y0, y1 = max(0, cy - half_w // 2), min(h, cy + half_w // 2)
-        x0, x1 = max(0, cx - half_w), min(w, cx + half_w)
-        crop = lambda im: cv2.resize(im[y0:y1, x0:x1], None, fx=2, fy=2, interpolation=cv2.INTER_NEAREST)
-        alpha8 = cv2.cvtColor((al * 255).astype(np.uint8), cv2.COLOR_GRAY2RGB)
-        top = np.hstack([crop(line), crop(alpha8)])
-        cv2.imwrite(str(qd / f"qc_f{int(i):03d}_zoom.png"), cv2.cvtColor(top, cv2.COLOR_RGB2BGR))
-        cv2.imwrite(str(qd / f"qc_f{int(i):03d}_full.png"),
-                    cv2.cvtColor(np.vstack([line, red]), cv2.COLOR_RGB2BGR))
+        x0, x1 = max(0, cx - half_w // 2), min(w, cx + half_w // 2)
+        up = lambda im: cv2.resize(im[y0:y1, x0:x1], None, fx=2, fy=2, interpolation=cv2.INTER_NEAREST)
+        bright = np.clip(rgb ** 0.6 * 1.5, 0, 1)  # lifted so hair against the blinds is readable
+        ov = bright * (1 - 0.45 * al[..., None]) + np.array([1.0, 0, 0]) * 0.45 * al[..., None]
+        ov = (np.clip(ov, 0, 1) * 255).astype(np.uint8)
+        for thr, col in ((0.5, (255, 255, 0)), (0.02, (255, 255, 255))):
+            src = al if thr == 0.5 else prot
+            cnt, _ = cv2.findContours((src > thr).astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+            cv2.drawContours(ov, cnt, -1, col, 1, cv2.LINE_AA)
+        tile = np.hstack([up((bright * 255).astype(np.uint8)), up(ov)])
+        cv2.putText(tile, f"f{i}  plate (lifted) | alpha red, alpha 0.5 yellow, protection edge white", (8, 22),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1, cv2.LINE_AA)
+        cv2.imwrite(str(qd / f"qc_f{i:03d}_zoom.png"), cv2.cvtColor(tile, cv2.COLOR_RGB2BGR))
+        cv2.imwrite(str(qd / f"qc_f{i:03d}_full.png"), cv2.cvtColor(np.vstack([line, red]), cv2.COLOR_RGB2BGR))
 
 
 if __name__ == "__main__":
