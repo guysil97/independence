@@ -1,14 +1,133 @@
 {
   "_doc": "SAM 2 prompts. Coordinates in active-area pixels of the given working-range frame. label 1 = positive, 0 = negative. Add correction entries (same obj_id, other frames) where the matte drifts.",
   "objects": {
-    "1": {"name": "matan", "protect": true},
-    "2": {"name": "stick", "protect": true}
+    "1": {
+      "name": "matan",
+      "protect": true,
+      "face": true
+    },
+    "2": {
+      "name": "stick",
+      "protect": true,
+      "face": false
+    }
   },
   "prompts": [
-    {"obj_id": 1, "frame": 30, "box": [150, 30, 1060, 800],
-     "points": [[480, 350, 1], [450, 120, 1], [600, 720, 1], [820, 250, 0], [1500, 300, 0]]},
-    {"obj_id": 1, "frame": 80, "points": [[930, 400, 1], [900, 100, 1], [1000, 750, 1], [300, 200, 0]]},
-    {"obj_id": 1, "frame": 112, "points": [[600, 420, 1], [650, 130, 1], [800, 760, 1], [480, 450, 0]]},
-    {"obj_id": 2, "frame": 112, "box": [440, 390, 520, 800], "points": [[480, 460, 1], [480, 700, 1], [560, 450, 0]]}
+    {
+      "obj_id": 1,
+      "frame": 30,
+      "box": [
+        150,
+        30,
+        1060,
+        800
+      ],
+      "points": [
+        [
+          480,
+          350,
+          1
+        ],
+        [
+          450,
+          120,
+          1
+        ],
+        [
+          600,
+          720,
+          1
+        ],
+        [
+          820,
+          250,
+          0
+        ],
+        [
+          1500,
+          300,
+          0
+        ]
+      ]
+    },
+    {
+      "obj_id": 1,
+      "frame": 80,
+      "points": [
+        [
+          930,
+          400,
+          1
+        ],
+        [
+          900,
+          100,
+          1
+        ],
+        [
+          1000,
+          750,
+          1
+        ],
+        [
+          300,
+          200,
+          0
+        ]
+      ]
+    },
+    {
+      "obj_id": 1,
+      "frame": 112,
+      "points": [
+        [
+          600,
+          420,
+          1
+        ],
+        [
+          650,
+          130,
+          1
+        ],
+        [
+          800,
+          760,
+          1
+        ],
+        [
+          480,
+          450,
+          0
+        ]
+      ]
+    },
+    {
+      "obj_id": 2,
+      "frame": 112,
+      "box": [
+        440,
+        390,
+        520,
+        800
+      ],
+      "points": [
+        [
+          480,
+          460,
+          1
+        ],
+        [
+          480,
+          700,
+          1
+        ],
+        [
+          560,
+          450,
+          0
+        ]
+      ]
+    }
   ]
 }

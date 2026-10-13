@@ -3,11 +3,13 @@
   "objects": {
     "1": {
       "name": "matan",
-      "protect": true
+      "protect": true,
+      "face": true
     },
     "2": {
       "name": "sara",
-      "protect": true
+      "protect": true,
+      "face": true
     }
   },
   "prompts": [

@@ -217,7 +217,9 @@ def run_refine(cfg):
             ok = (np.abs(wg - grays[i]) < tol).astype(np.float32) * w_side
             acc += _warp(prot_raw[j], fl) * ok
             wsum += ok
-        prot.append(np.maximum(acc / wsum, union[i]))
+        # wherever the current frame has any actor alpha, protection is exactly 1;
+        # temporal smoothing only ever acts on the falloff band outside the actors
+        prot.append(np.maximum(acc / wsum, (union[i] > 0.02).astype(np.float32)))
     print(f"  temporal {time.time() - t0:.0f}s")
     er = int(mc.get("integrity_erode_px", 3))
     ke = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * er + 1, 2 * er + 1))

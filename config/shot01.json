@@ -21,7 +21,7 @@
     "01:00:28:03"
   ],
   "ref_frame": 30,
-  "seed": 5786,
+  "seed": 5844,
   "regions": "config/regions/shot01.json",
   "preview_lut": null,
   "analysis": {
@@ -82,5 +82,175 @@
       ]
     },
     "fill_holes_max_px": 6000
+  },
+  "geometry": {
+    "_doc": "storefront axis: x_px = x_m*px_per_m (ref frame), y_px = y_ground_px - h_m*px_per_m; blinds_A ~2.0 m wide",
+    "px_per_m": 396.0,
+    "y_ground_px": 1002.0,
+    "street_extent_m": [
+      -3.0,
+      8.0
+    ]
+  },
+  "crowd": {
+    "_doc": "clustered Poisson arrivals; distances from the glass; speeds in m/s",
+    "prewarm_s": 25.0,
+    "group_size": [
+      2,
+      6
+    ],
+    "group_interarrival_s": [
+      4,
+      15
+    ],
+    "lull_prob": 0.35,
+    "lull_s": [
+      5,
+      20
+    ],
+    "left_to_right_prob": 0.5,
+    "walk_speed_mps": [
+      1.0,
+      1.6
+    ],
+    "kid_prob": 0.22,
+    "kid_speed_mps": [
+      2.5,
+      4.0
+    ],
+    "distance_m": [
+      0.5,
+      6.0
+    ],
+    "gait_hz": 2.0,
+    "gait_amp_m": 0.03,
+    "props_per_person": [
+      0,
+      3
+    ],
+    "palette_weights": {
+      "blue_led": 0.36,
+      "white_led": 0.24,
+      "hammer": 0.12,
+      "flashing_toy": 0.12,
+      "glow_stick": 0.12,
+      "phone": 0.04
+    }
+  },
+  "elements": {
+    "light_field": {
+      "_doc": "street light behind the blinds: out = plate*(1 + k*T*L)*(1 - T*O)",
+      "downscale": 8,
+      "shutter_samples": 3,
+      "k_blinds": 1.0,
+      "k_diffuse_glass": 0.7,
+      "k_gain": 0.22,
+      "cap": 0.28,
+      "desaturate": 0.5,
+      "sigma_base_m": 0.3,
+      "sigma_per_m": 0.22,
+      "aspect_x": 1.35,
+      "falloff_m": 1.5,
+      "occl_max": 0.35,
+      "occl_falloff_m": 1.0,
+      "occl_blur_base_m": 0.12,
+      "occl_blur_per_m": 0.18,
+      "diffuse_extra_blur_px": 30
+    },
+    "door_bokeh": {
+      "_doc": "defocused props through the door glass; sizes from the measured handle glint (31x44 px, edge 15 px)",
+      "bbox_px": [
+        1108,
+        0,
+        1920,
+        800
+      ],
+      "focus_m": 1.6,
+      "ref_dist_m": 3.0,
+      "glass_dist_m": 3.0,
+      "ref_minor_px": 31,
+      "ref_major_px": 44,
+      "ref_edge_px": 15,
+      "rim_to_core": 0.79,
+      "peak_lin": 0.05,
+      "max_peak_lin": 0.15,
+      "falloff_m": 4.0,
+      "desaturate": 0.15,
+      "shutter_samples": 5,
+      "occl_max": 0.08,
+      "handle_glints": false
+    },
+    "fireworks": {
+      "_doc": "broad flashes through the windows; at_s = seconds from the start of the working range, null = random",
+      "at_s": null,
+      "count": [
+        0,
+        2
+      ],
+      "peak": [
+        0.2,
+        0.45
+      ],
+      "attack_frames": [
+        1,
+        2
+      ],
+      "decay_s": [
+        0.3,
+        1.2
+      ],
+      "multi_burst_prob": 0.35,
+      "min_burst_gap_s": 0.4,
+      "desaturate": 0.35,
+      "door_scale": 0.4,
+      "palette": [
+        [
+          1,
+          1,
+          1
+        ],
+        [
+          1.0,
+          0.8,
+          0.35
+        ],
+        [
+          1.0,
+          0.3,
+          0.25
+        ],
+        [
+          0.4,
+          1.0,
+          0.45
+        ],
+        [
+          0.35,
+          0.55,
+          1.0
+        ]
+      ]
+    },
+    "faces": {
+      "_doc": "less light change and shallower blinking near faces",
+      "radius_px": 260,
+      "intensity_level": 0.55,
+      "blink_depth": 0.3
+    },
+    "grain": {
+      "enabled": true,
+      "amount": 1.0,
+      "blur_px": 0.8
+    },
+    "spill": {
+      "enabled": false,
+      "falloff_px": 40,
+      "max": 0.03
+    },
+    "quiet_ease_frames": 12
+  },
+  "test": {
+    "length_frames": 75,
+    "start_frame": null
   }
 }
