@@ -286,8 +286,8 @@ def render(shot: str, mode: str, limit: int | None = None):
             sg *= np.clip(np.abs(diff) / np.maximum(sg, 1e-6), 0, 1)
             code = code + g * sg * e["grain"]["amount"] * (keep[..., None] > 0)
         code = np.where(changed[..., None], media.dither_to_10bit(code, rng), src)
-        hot = (src >= e.get("max_code", 0.985)).any(-1)
-        code[hot] = src[hot]  # already at the plate's white: never pushed further (no new clipping)
+        hot = src >= e.get("max_code", 0.985)
+        code = np.where(hot, src, code)  # a channel already at the plate's white is never pushed further
         code[integ] = src[integ]  # hard guarantee: actor core untouched
         writer.write(np.clip(code, 0, 1))
 
@@ -307,6 +307,9 @@ def render(shot: str, mode: str, limit: int | None = None):
             "win_lum_nofw": float((pipe.luminance(np.maximum(nofw, 0)) * wm).sum() / max(wm.sum(), 1)),
             "new_clipped_px": int(((src < 0.995) & (code >= 0.999)).any(-1)[masks["windows_all"] > 0].sum()),
             "changed_px": int(changed.sum()),
+            "local_change_p95": float(np.percentile(np.abs(pipe.luminance(pipe.to_linear(code)) / np.maximum(Y, 1e-5) - 1)[
+                (masks["windows_all"] > 0.9) & (keep > 0.99) & (Y > 1e-3)], 95))
+            if ((masks["windows_all"] > 0.9) & (keep > 0.99)).any() else 0.0,
             "faces": faces,
         })
 
@@ -401,7 +404,10 @@ def run_qc(cfg, pipe, comp_path, idx, stats, el, mode):
              f"| new clipping in windows | {'PASS' if passed['no_new_clipping'] else 'FAIL'} | {clipped} px total |",
              f"| banding | flag | source is {cfg['_probe']['bit_depth']}-bit {cfg['_probe']['codec']}: banding/blocking in the plate itself is not fought (proxy) |",
              "", "Window luminance change introduced (relative): "
-             f"mean {rel.mean() * 100:+.2f} %, min {rel.min() * 100:+.2f} %, max {rel.max() * 100:+.2f} %", "",
+             f"mean {rel.mean() * 100:+.2f} %, min {rel.min() * 100:+.2f} %, max {rel.max() * 100:+.2f} %  ·  "
+             f"local change in visible window area (p95 per frame): median "
+             f"{np.median([s['local_change_p95'] for s in stats]) * 100:.1f} %, max "
+             f"{max(s['local_change_p95'] for s in stats) * 100:.1f} %", "",
              "Per-frame post-encode integrity (10-bit CV, max / p99.9):", "",
              "| frame | TC | max | p99.9 |", "|---|---|---|---|"]
     for n, s in enumerate(stats):
