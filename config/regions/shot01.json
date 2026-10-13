@@ -1,0 +1,597 @@
+{
+  "_doc": "Polygons in active-area pixels (crop applied) of the reference frame (config ref_frame, index within the working range). Tracked per frame by the plane homography. feather = soft edge in px. Edit freely.",
+  "ref_frame": 30,
+  "windows": {
+    "blinds_A": {
+      "plane": "storefront",
+      "feather": 6,
+      "poly": [
+        [
+          156,
+          0
+        ],
+        [
+          948,
+          0
+        ],
+        [
+          948,
+          642
+        ],
+        [
+          332,
+          642
+        ],
+        [
+          332,
+          336
+        ],
+        [
+          156,
+          336
+        ]
+      ]
+    },
+    "door_glass": {
+      "plane": "storefront",
+      "feather": 10,
+      "poly": [
+        [
+          1108,
+          0
+        ],
+        [
+          1920,
+          0
+        ],
+        [
+          1920,
+          800
+        ],
+        [
+          1108,
+          800
+        ]
+      ]
+    }
+  },
+  "foreground": {
+    "_doc": "Objects in front of the street inside a window region; elements pass behind them.",
+    "handle": {
+      "plane": "storefront",
+      "feather": 16,
+      "poly": [
+        [
+          1272,
+          800
+        ],
+        [
+          1272,
+          540
+        ],
+        [
+          1290,
+          512
+        ],
+        [
+          1318,
+          500
+        ],
+        [
+          1350,
+          502
+        ],
+        [
+          1374,
+          518
+        ],
+        [
+          1388,
+          545
+        ],
+        [
+          1390,
+          800
+        ],
+        [
+          1346,
+          800
+        ],
+        [
+          1344,
+          570
+        ],
+        [
+          1334,
+          556
+        ],
+        [
+          1322,
+          558
+        ],
+        [
+          1316,
+          575
+        ],
+        [
+          1316,
+          800
+        ]
+      ]
+    },
+    "sign_1": {
+      "plane": "storefront",
+      "feather": 16,
+      "poly": [
+        [
+          1388,
+          552
+        ],
+        [
+          1560,
+          552
+        ],
+        [
+          1564,
+          688
+        ],
+        [
+          1390,
+          690
+        ]
+      ]
+    },
+    "sign_2": {
+      "plane": "storefront",
+      "feather": 16,
+      "poly": [
+        [
+          1752,
+          542
+        ],
+        [
+          1920,
+          542
+        ],
+        [
+          1920,
+          708
+        ],
+        [
+          1756,
+          708
+        ]
+      ]
+    },
+    "door_edge_frame": {
+      "plane": "storefront",
+      "feather": 20,
+      "poly": [
+        [
+          1100,
+          0
+        ],
+        [
+          1132,
+          0
+        ],
+        [
+          1132,
+          800
+        ],
+        [
+          1100,
+          800
+        ]
+      ]
+    },
+    "interior_bokeh_1": {
+      "plane": "storefront",
+      "feather": 10,
+      "_note": "interior ceiling-light bokeh in front of the blinds: never relit",
+      "poly": [
+        [
+          822,
+          86
+        ],
+        [
+          820,
+          96
+        ],
+        [
+          813,
+          104
+        ],
+        [
+          803,
+          110
+        ],
+        [
+          792,
+          112
+        ],
+        [
+          781,
+          110
+        ],
+        [
+          771,
+          104
+        ],
+        [
+          764,
+          96
+        ],
+        [
+          762,
+          86
+        ],
+        [
+          764,
+          76
+        ],
+        [
+          771,
+          68
+        ],
+        [
+          781,
+          62
+        ],
+        [
+          792,
+          60
+        ],
+        [
+          803,
+          62
+        ],
+        [
+          813,
+          68
+        ],
+        [
+          820,
+          76
+        ]
+      ]
+    },
+    "interior_bokeh_2": {
+      "plane": "storefront",
+      "feather": 10,
+      "_note": "interior ceiling-light bokeh in front of the blinds: never relit",
+      "poly": [
+        [
+          258,
+          128
+        ],
+        [
+          256,
+          137
+        ],
+        [
+          251,
+          145
+        ],
+        [
+          243,
+          150
+        ],
+        [
+          234,
+          152
+        ],
+        [
+          225,
+          150
+        ],
+        [
+          217,
+          145
+        ],
+        [
+          212,
+          137
+        ],
+        [
+          210,
+          128
+        ],
+        [
+          212,
+          119
+        ],
+        [
+          217,
+          111
+        ],
+        [
+          225,
+          106
+        ],
+        [
+          234,
+          104
+        ],
+        [
+          243,
+          106
+        ],
+        [
+          251,
+          111
+        ],
+        [
+          256,
+          119
+        ]
+      ]
+    },
+    "interior_bokeh_3": {
+      "plane": "storefront",
+      "feather": 10,
+      "_note": "interior ceiling-light bokeh in front of the blinds: never relit",
+      "poly": [
+        [
+          400,
+          104
+        ],
+        [
+          398,
+          112
+        ],
+        [
+          394,
+          120
+        ],
+        [
+          386,
+          124
+        ],
+        [
+          378,
+          126
+        ],
+        [
+          370,
+          124
+        ],
+        [
+          362,
+          120
+        ],
+        [
+          358,
+          112
+        ],
+        [
+          356,
+          104
+        ],
+        [
+          358,
+          96
+        ],
+        [
+          362,
+          88
+        ],
+        [
+          370,
+          84
+        ],
+        [
+          378,
+          82
+        ],
+        [
+          386,
+          84
+        ],
+        [
+          394,
+          88
+        ],
+        [
+          398,
+          96
+        ]
+      ]
+    },
+    "interior_bokeh_4": {
+      "plane": "storefront",
+      "feather": 10,
+      "_note": "interior ceiling-light bokeh in front of the blinds: never relit",
+      "poly": [
+        [
+          588,
+          92
+        ],
+        [
+          586,
+          100
+        ],
+        [
+          582,
+          108
+        ],
+        [
+          574,
+          112
+        ],
+        [
+          566,
+          114
+        ],
+        [
+          558,
+          112
+        ],
+        [
+          550,
+          108
+        ],
+        [
+          546,
+          100
+        ],
+        [
+          544,
+          92
+        ],
+        [
+          546,
+          84
+        ],
+        [
+          550,
+          76
+        ],
+        [
+          558,
+          72
+        ],
+        [
+          566,
+          70
+        ],
+        [
+          574,
+          72
+        ],
+        [
+          582,
+          76
+        ],
+        [
+          586,
+          84
+        ]
+      ]
+    },
+    "interior_bokeh_5": {
+      "plane": "storefront",
+      "feather": 10,
+      "_note": "interior ceiling-light bokeh in front of the blinds: never relit",
+      "poly": [
+        [
+          408,
+          490
+        ],
+        [
+          406,
+          500
+        ],
+        [
+          400,
+          508
+        ],
+        [
+          392,
+          514
+        ],
+        [
+          382,
+          516
+        ],
+        [
+          372,
+          514
+        ],
+        [
+          364,
+          508
+        ],
+        [
+          358,
+          500
+        ],
+        [
+          356,
+          490
+        ],
+        [
+          358,
+          480
+        ],
+        [
+          364,
+          472
+        ],
+        [
+          372,
+          466
+        ],
+        [
+          382,
+          464
+        ],
+        [
+          392,
+          466
+        ],
+        [
+          400,
+          472
+        ],
+        [
+          406,
+          480
+        ]
+      ]
+    }
+  },
+  "actor_rough": {
+    "_doc": "Generous hand-drawn exclusion for the camera tracker only (before real mattes exist).",
+    "poly": [
+      [
+        240,
+        20
+      ],
+      [
+        700,
+        0
+      ],
+      [
+        1240,
+        0
+      ],
+      [
+        1240,
+        800
+      ],
+      [
+        140,
+        800
+      ],
+      [
+        200,
+        420
+      ]
+    ]
+  },
+  "planes": {
+    "_doc": "One storefront facade plane: blinds window and glass door sit within ~20 cm of each other. Tracked only on areas the actor never covers in this take.",
+    "storefront": {
+      "model": "affine",
+      "track_poly": [
+        [
+          1250,
+          0
+        ],
+        [
+          1920,
+          0
+        ],
+        [
+          1920,
+          800
+        ],
+        [
+          1250,
+          800
+        ]
+      ]
+    }
+  }
+}

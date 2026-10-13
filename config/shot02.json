@@ -1,0 +1,55 @@
+{
+  "shot": "shot02",
+  "plate": "plates/shot02.mov",
+  "_comment": "Look-dev proxy config. For the real plates set input_transfer=slog3, input_gamut=sgamut3cine, crop=null, frame_range as needed.",
+  "color": {
+    "input_transfer": "rec709_display",
+    "input_gamut": "rec709",
+    "display_gamma": 2.4,
+    "slog3_levels": "legal",
+    "yuv_matrix": "bt709",
+    "range": "tv"
+  },
+  "crop": {
+    "x": 0,
+    "y": 140,
+    "w": 1920,
+    "h": 800
+  },
+  "frame_range": [
+    0,
+    170
+  ],
+  "ref_frame": 86,
+  "seed": 5787,
+  "regions": "config/regions/shot02.json",
+  "preview_lut": null,
+  "analysis": {
+    "motion": {
+      "max_corners": 1500,
+      "quality": 0.002,
+      "ecc_min_cc": 0.85,
+      "min_distance": 8,
+      "ransac_px": 1.0,
+      "locked_off_px": 0.5
+    },
+    "noise": {
+      "patch": 32
+    },
+    "zoom": {
+      "blinds_A": [
+        880,
+        230
+      ],
+      "blinds_B": [
+        1840,
+        260
+      ]
+    },
+    "bokeh": false,
+    "transmission_smooth_px": 0.8
+  },
+  "_cuts_in_plate": [
+    171
+  ]
+}

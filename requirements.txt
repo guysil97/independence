@@ -1,0 +1,12 @@
+# core (Step 1+)
+numpy
+scipy
+opencv-contrib-python-headless   # macOS: opencv-contrib-python is fine too (needs ximgproc)
+pillow
+tqdm
+colour-science
+matplotlib
+tifffile
+imageio
+pytest
+# Step 2 (mattes): torch + SAM 2 — see README

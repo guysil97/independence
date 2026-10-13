@@ -1,0 +1,101 @@
+{
+  "_doc": "Polygons in active-area pixels (crop applied) of the reference frame (config ref_frame, index within the working range). Tracked per frame by the plane homography. feather = soft edge in px. Edit freely.",
+  "ref_frame": 86,
+  "windows": {
+    "blinds_A": {
+      "plane": "storefront",
+      "feather": 5,
+      "poly": [
+        [
+          788,
+          118
+        ],
+        [
+          1220,
+          96
+        ],
+        [
+          1222,
+          648
+        ],
+        [
+          788,
+          646
+        ]
+      ]
+    },
+    "blinds_B": {
+      "plane": "storefront",
+      "feather": 5,
+      "poly": [
+        [
+          1724,
+          0
+        ],
+        [
+          1920,
+          0
+        ],
+        [
+          1920,
+          488
+        ],
+        [
+          1864,
+          488
+        ],
+        [
+          1858,
+          562
+        ],
+        [
+          1796,
+          568
+        ],
+        [
+          1796,
+          620
+        ],
+        [
+          1724,
+          620
+        ]
+      ]
+    }
+  },
+  "foreground": {},
+  "actor_rough": {
+    "_doc": "Generous hand-drawn exclusion for the camera tracker only (before real mattes exist).",
+    "poly": [
+      [
+        960,
+        120
+      ],
+      [
+        1240,
+        120
+      ],
+      [
+        1500,
+        220
+      ],
+      [
+        1520,
+        800
+      ],
+      [
+        820,
+        800
+      ],
+      [
+        840,
+        320
+      ]
+    ]
+  },
+  "planes": {
+    "storefront": {
+      "model": "homography"
+    }
+  }
+}
