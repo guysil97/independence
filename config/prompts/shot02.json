@@ -1,0 +1,15 @@
+{
+  "_doc": "SAM 2 prompts. Coordinates in active-area pixels of the given working-range frame. label 1 = positive, 0 = negative.",
+  "objects": {
+    "1": {"name": "matan", "protect": true},
+    "2": {"name": "sara", "protect": true}
+  },
+  "prompts": [
+    {"obj_id": 1, "frame": 0, "box": [800, 130, 1310, 800],
+     "points": [[1053, 227, 1], [947, 547, 1], [1173, 600, 1], [1253, 453, 1], [1307, 560, 0], [870, 250, 0]]},
+    {"obj_id": 2, "frame": 0, "box": [1110, 210, 1460, 690],
+     "points": [[1373, 347, 1], [1280, 307, 1], [1307, 560, 1], [1253, 453, 0], [1050, 230, 0]]},
+    {"obj_id": 1, "frame": 140, "points": [[1050, 230, 1], [950, 550, 1], [1160, 373, 1], [1147, 427, 1], [1330, 560, 0]]},
+    {"obj_id": 2, "frame": 140, "points": [[1400, 400, 1], [1330, 290, 1], [1330, 560, 1], [1160, 373, 0]]}
+  ]
+}

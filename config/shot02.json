@@ -51,5 +51,37 @@
   },
   "_cuts_in_plate": [
     171
-  ]
+  ],
+  "mattes": {
+    "sam_model": "base_plus",
+    "dilate_px": 8,
+    "gf_radius": 8,
+    "gf_eps": 0.001,
+    "protect_px": 12,
+    "temporal_side_weight": 0.25,
+    "temporal_consistency": 12.0,
+    "integrity_erode_px": 3,
+    "qc_frames": {
+      "0": [
+        1150,
+        330,
+        600
+      ],
+      "60": [
+        1150,
+        330,
+        600
+      ],
+      "140": [
+        1150,
+        330,
+        600
+      ],
+      "170": [
+        1150,
+        330,
+        600
+      ]
+    }
+  }
 }

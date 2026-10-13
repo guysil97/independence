@@ -49,5 +49,37 @@
     165,
     304,
     434
-  ]
+  ],
+  "mattes": {
+    "sam_model": "base_plus",
+    "dilate_px": 8,
+    "gf_radius": 8,
+    "gf_eps": 0.001,
+    "protect_px": 12,
+    "temporal_side_weight": 0.25,
+    "temporal_consistency": 12.0,
+    "integrity_erode_px": 3,
+    "qc_frames": {
+      "0": [
+        600,
+        250,
+        600
+      ],
+      "80": [
+        880,
+        200,
+        600
+      ],
+      "112": [
+        540,
+        420,
+        500
+      ],
+      "124": [
+        560,
+        350,
+        600
+      ]
+    }
+  }
 }

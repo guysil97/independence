@@ -334,7 +334,7 @@ def run(shot: str):
     for k in R["foreground"]:
         fg_union = np.maximum(fg_union, masks_ref[f"fg_{k}"])
     for k, reg in R["windows"].items():
-        if not k.startswith("blinds"):
+        if reg.get("kind", "blinds") != "blinds":
             continue
         b = blinds_analysis(Ymed, masks_ref[k], actor)
         blinds[k] = b
@@ -343,8 +343,15 @@ def run(shot: str):
             # so the map is built from the reference frame itself
             T = np.maximum(T, transmission_map(Yref_lin, masks_ref[k], fg_union, b["slat_period_px"]))
     for k, reg in R["windows"].items():
-        if k.startswith("door"):  # glass: uniform transmission, foreground objects removed
+        if reg.get("kind") == "clear_glass":  # uniform transmission, foreground objects removed
             T = np.maximum(T, masks_ref[k])
+        elif reg.get("kind") == "diffuse_glass":
+            # frosted pane: transmission follows its own (very smooth) luminance profile,
+            # normalised to the pane's bright level; no slat or object structure
+            m = masks_ref[k]
+            Ys = cv2.GaussianBlur(Yref_lin, (0, 0), 6)
+            ref_level = np.percentile(Ys[m > 0.98], 95)
+            T = np.maximum(T, np.clip(Ys / max(ref_level, 1e-6), 0, 1) * m)
     summary["blinds"] = blinds
     sm = cfg["analysis"].get("transmission_smooth_px", 0)
     if sm > 0:  # proxy codecs: suppress macroblock structure in the map

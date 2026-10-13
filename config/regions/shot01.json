@@ -30,6 +30,55 @@
           156,
           336
         ]
+      ],
+      "kind": "blinds"
+    },
+    "frosted_panels": {
+      "plane": "storefront",
+      "kind": "diffuse_glass",
+      "feather": 14,
+      "_note": "stacked frosted/covered glass panes between the blinds and the door: soft shapeless light only, no bokeh. Set kind to clear_glass to treat like the door.",
+      "poly": [
+        [
+          1028,
+          92
+        ],
+        [
+          1102,
+          92
+        ],
+        [
+          1102,
+          452
+        ],
+        [
+          1012,
+          452
+        ],
+        [
+          1012,
+          632
+        ],
+        [
+          940,
+          632
+        ],
+        [
+          940,
+          452
+        ],
+        [
+          985,
+          452
+        ],
+        [
+          985,
+          252
+        ],
+        [
+          1028,
+          252
+        ]
       ]
     },
     "door_glass": {
@@ -52,7 +101,8 @@
           1108,
           800
         ]
-      ]
+      ],
+      "kind": "clear_glass"
     }
   },
   "foreground": {

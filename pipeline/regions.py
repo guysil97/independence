@@ -69,7 +69,8 @@ def frame_masks(regions: dict, shape, Hs: dict | None = None) -> dict:
 def draw_overlay(img_rgb8: np.ndarray, regions: dict, Hs: dict | None = None, labels=True) -> np.ndarray:
     Hs = Hs or {}
     im = img_rgb8.copy()
-    colors = {"blinds_A": (255, 170, 0), "blinds_B": (0, 220, 255), "door_glass": (80, 255, 80)}
+    colors = {"blinds_A": (255, 170, 0), "blinds_B": (0, 220, 255), "door_glass": (80, 255, 80),
+              "frosted_panels": (190, 120, 255)}
     tint = im.astype(np.float32)
     for name, reg in regions["windows"].items():
         c = colors.get(name, (255, 255, 0))

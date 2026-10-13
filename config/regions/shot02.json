@@ -22,7 +22,8 @@
           788,
           646
         ]
-      ]
+      ],
+      "kind": "blinds"
     },
     "blinds_B": {
       "plane": "storefront",
@@ -60,7 +61,8 @@
           1724,
           620
         ]
-      ]
+      ],
+      "kind": "blinds"
     }
   },
   "foreground": {},
