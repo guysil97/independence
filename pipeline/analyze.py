@@ -351,7 +351,9 @@ def run(shot: str):
              else rg.hard_mask(R["actor_rough"]["poly"], shape))
     # transmission source: the clean-plate median where enough actor-free frames exist,
     # the reference frame elsewhere (pixels the actors cover for the whole take)
-    Ysrc = Yref_lin if actor_masks is None else np.where(clean_valid, np.nan_to_num(Ymed), Yref_lin)
+    # pixels hidden by the actors in (almost) every frame get zero transmission: never seen, never lit
+    Ysrc = Yref_lin if actor_masks is None else np.where(
+        clean_valid, np.nan_to_num(Ymed), np.where(actor > 0, 0.0, Yref_lin)).astype(np.float32)
     summary["clean_plate_coverage_in_windows"] = (
         float(clean_valid[masks_ref["windows_all"] > 0.5].mean()) if actor_masks is not None else None)
     blinds = {}
