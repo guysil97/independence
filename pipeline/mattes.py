@@ -75,8 +75,11 @@ def run_sam(cfg):
         out_dir = config.work(cfg, "mattes", "raw")
         N = state["num_frames"]
         results = {}
-        for reverse in (False, True):
-            for f, ids, logits in pred.propagate_in_video(state, reverse=reverse):
+        start_rev = max(first.values())  # backward pass only needs frames before the latest first prompt
+        passes = [(False, {})] + ([(True, {"start_frame_idx": start_rev, "max_frame_num_to_track": start_rev})]
+                                  if start_rev > 0 else [])
+        for reverse, kw in passes:
+            for f, ids, logits in pred.propagate_in_video(state, reverse=reverse, **kw):
                 for oid, lg in zip(ids, logits):
                     # forward pass owns frames from the object's first prompt on; reverse the rest
                     if reverse == (f < first[int(oid)]):
