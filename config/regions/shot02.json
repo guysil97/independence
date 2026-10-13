@@ -65,7 +65,79 @@
       "kind": "blinds"
     }
   },
-  "foreground": {},
+  "foreground": {
+    "interior_light_1": {
+      "plane": "storefront",
+      "feather": 6,
+      "_note": "small interior lamp reflection inside blinds_B: never relit",
+      "poly": [
+        [
+          1926,
+          277
+        ],
+        [
+          1925,
+          282
+        ],
+        [
+          1921,
+          285
+        ],
+        [
+          1916,
+          288
+        ],
+        [
+          1910,
+          289
+        ],
+        [
+          1904,
+          288
+        ],
+        [
+          1899,
+          285
+        ],
+        [
+          1895,
+          282
+        ],
+        [
+          1894,
+          277
+        ],
+        [
+          1895,
+          272
+        ],
+        [
+          1899,
+          269
+        ],
+        [
+          1904,
+          266
+        ],
+        [
+          1910,
+          265
+        ],
+        [
+          1916,
+          266
+        ],
+        [
+          1921,
+          269
+        ],
+        [
+          1925,
+          272
+        ]
+      ]
+    }
+  },
   "actor_rough": {
     "_doc": "Generous hand-drawn exclusion for the camera tracker only (before real mattes exist).",
     "poly": [

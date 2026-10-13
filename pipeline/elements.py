@@ -183,9 +183,10 @@ class Elements:
         for t0 in times:
             n = 1 + (rng.random() < fw["multi_burst_prob"]) + (rng.random() < fw["multi_burst_prob"] / 2)
             t = t0
-            for _ in range(n):
+            for j in range(n):
                 col = fw["palette"][rng.integers(len(fw["palette"]))]
-                bursts.append({"t": t, "peak": rng.uniform(*fw["peak"]), "decay": rng.uniform(*fw["decay_s"]),
+                pk = rng.uniform(*fw["peak"]) * (fw.get("follow_up_scale", 1.0) if j else 1.0)
+                bursts.append({"t": t, "peak": pk, "decay": rng.uniform(*fw["decay_s"]),
                                "attack": rng.uniform(*fw["attack_frames"]) / self.fps, "color": col})
                 t += rng.uniform(fw["min_burst_gap_s"], fw["min_burst_gap_s"] + 0.35)  # photosensitivity: <= ~2.5/s
         return bursts

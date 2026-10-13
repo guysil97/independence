@@ -96,7 +96,16 @@ def noise_sigma_fn(analysis, region):
 def soft_knee(x, cap, knee=0.85):
     k = knee * cap
     over = np.maximum(x - k, 0)
-    return np.where(x > k, k + (cap - k) * (1 - np.exp(-over / max(cap - k, 1e-6))), x)
+    return np.where(x > k, k + (cap - k) * (1 - np.exp(-over / np.maximum(cap - k, 1e-6))), x)
+
+
+def limit_brightening(lin, new, cap):
+    """Brightening rolls off smoothly so the result never exceeds `cap` (the plate's own
+    max in the region); darkening is untouched. Zero change stays zero change."""
+    up = new > lin
+    gain = (soft_knee(new, cap) - soft_knee(lin, cap)) * np.clip(
+        (cap - lin) / np.maximum(cap - soft_knee(lin, cap), 1e-6), 0, 1)
+    return np.where(up, lin + np.maximum(gain, 0), new)
 
 
 def pick_test_window(cfg, R, Hs_all, length):
@@ -116,7 +125,7 @@ def pick_test_window(cfg, R, Hs_all, length):
 
 
 # ------------------------------------------------------------------ main render
-def render(shot: str, mode: str):
+def render(shot: str, mode: str, limit: int | None = None):
     cfg = config.load(shot)
     pipe = colorpipe.ColorPipe(cfg)
     R = rg.load(cfg)
@@ -138,7 +147,7 @@ def render(shot: str, mode: str):
         vis = None
         if start is None:
             start, vis = pick_test_window(cfg, R, Hs_all, length)
-        idx = list(range(start, min(start + length, N)))
+        idx = list(range(start, min(start + (limit or length), N)))
         out_dir = ROOT / "test"
         tag = f"{shot}"
     else:
@@ -156,7 +165,9 @@ def render(shot: str, mode: str):
     fw_quiet = np.array([any(a - 12 <= i <= b + 12 for a, b in quiet) for i in range(N)])
 
     # caps against clipping: never above the plate's own max in each region
-    caps = {k: np.array(analysis["levels"][k]["highlight_p99.99_lin_rgb"], np.float32) for k in R["windows"]}
+    white = float(pipe.to_linear(np.float32(e.get("max_code", 0.985))))  # never push a pixel to full white
+    caps = {k: np.minimum(np.array(analysis["levels"][k]["highlight_p99.99_lin_rgb"], np.float32), white)
+            for k in R["windows"]}
     sig = {k: noise_sigma_fn(analysis, k) for k in R["windows"]}
     period = {k: (analysis["blinds"].get(k) or {}).get("slat_period_px", 12.0) for k in R["windows"]}
     tsm = cfg["analysis"].get("transmission_smooth_px", 0)
@@ -215,6 +226,7 @@ def render(shot: str, mode: str):
         fw_gain = el.fireworks(t, 0.0 if fw_quiet[i] else qi)
 
         out = lin.copy()
+        nofw = lin.copy()  # everything except the fireworks (for the >3 Hz oscillation test)
         layers = {"blinds": np.zeros_like(lin), "door": np.zeros_like(lin), "fireworks": np.zeros_like(lin)}
         for k, reg in R["windows"].items():
             m = masks[k] * keep
@@ -251,8 +263,9 @@ def render(shot: str, mode: str):
                 new = new_b + lin * T3 * fw_gain * e["fireworks"]["door_scale"]
                 layers["door"] += (new_b - lin) * m[..., None]
                 layers["fireworks"] += (new - new_b) * m[..., None]
-            new = lin + soft_knee(new, caps[k]) - soft_knee(lin, caps[k])  # never above the plate's max
+            new = limit_brightening(lin, new, caps[k])  # never above the plate's max
             out = out + (new - lin) * m[..., None]
+            nofw = nofw + (limit_brightening(lin, new_b, caps[k]) - lin) * m[..., None]
 
         # back to code values; grain on the introduced difference only
         code = pipe.from_linear(np.maximum(out, 0))
@@ -273,6 +286,8 @@ def render(shot: str, mode: str):
             sg *= np.clip(np.abs(diff) / np.maximum(sg, 1e-6), 0, 1)
             code = code + g * sg * e["grain"]["amount"] * (keep[..., None] > 0)
         code = np.where(changed[..., None], media.dither_to_10bit(code, rng), src)
+        hot = (src >= e.get("max_code", 0.985)).any(-1)
+        code[hot] = src[hot]  # already at the plate's white: never pushed further (no new clipping)
         code[integ] = src[integ]  # hard guarantee: actor core untouched
         writer.write(np.clip(code, 0, 1))
 
@@ -289,6 +304,7 @@ def render(shot: str, mode: str):
             "actor_protection_max": float(d[prot >= 0.999].max()) if (prot >= 0.999).any() else 0.0,
             "win_lum_src": float((Y * wm).sum() / max(wm.sum(), 1)),
             "win_lum_out": float((Yo * wm).sum() / max(wm.sum(), 1)),
+            "win_lum_nofw": float((pipe.luminance(np.maximum(nofw, 0)) * wm).sum() / max(wm.sum(), 1)),
             "new_clipped_px": int(((src < 0.995) & (code >= 0.999)).any(-1)[masks["windows_all"] > 0].sum()),
             "changed_px": int(changed.sum()),
             "faces": faces,
@@ -334,6 +350,20 @@ def run_qc(cfg, pipe, comp_path, idx, stats, el, mode):
         d = np.abs(img - src)[integ] * 1023
         post.append((float(d.max()), float(np.percentile(d, 99.9))))
     post = np.array(post)
+    base_path = config.work(cfg) / f"codec_baseline_{mode}.mov"
+    bw = media.ProResWriter(base_path, cfg, qcfg["_probe"]["width"], qcfg["_probe"]["height"],
+                            profile="4444" if mode == "test" else "4444xq")
+    for i in idx:
+        bw.write(tifffile.imread(frames[i]).astype(np.float32) / 65535.0)
+    bw.close()
+    bcfg = dict(cfg, plate=str(base_path), crop=None, _probe=media.probe(base_path)["summary"])
+    base = []
+    for n, (_, img) in enumerate(media.read_frames(bcfg, 0, len(idx), crop=False)):
+        src = tifffile.imread(frames[idx[n]]).astype(np.float32) / 65535.0
+        integ = cv2.imread(str(config.work(cfg, "mattes", "integrity") / f"{idx[n]:05d}.png"), cv2.IMREAD_GRAYSCALE) > 0
+        d = np.abs(img - src)[integ] * 1023
+        base.append((float(d.max()), float(np.percentile(d, 99.9))))
+    base = np.array(base)
     pre_int = max(s["integrity_max_pre_encode"] for s in stats)
     outside = max(s["outside_regions_max"] for s in stats)
     prot_max = max(s["actor_protection_max"] for s in stats)
@@ -342,10 +372,11 @@ def run_qc(cfg, pipe, comp_path, idx, stats, el, mode):
     lo = np.array([s["win_lum_out"] for s in stats])
     ls = np.array([s["win_lum_src"] for s in stats])
     rel = (lo - ls) / np.maximum(ls, 1e-6)
-    spec = np.abs(np.fft.rfft(rel - rel.mean()))
-    fr = np.fft.rfftfreq(len(rel), 1 / fps)
-    hf = float(np.sqrt((spec[fr > 3] ** 2).sum() / max((spec ** 2).sum(), 1e-12))) if len(rel) > 8 else 0.0
-    hf_amp = float(np.sqrt(2 * (spec[fr > 3] ** 2).sum()) / len(rel))  # rms of >3 Hz part, relative lum
+    # (a) sustained oscillation: >3 Hz content of everything except the (single-event) fireworks
+    rel_nf = (np.array([s["win_lum_nofw"] for s in stats]) - ls) / np.maximum(ls, 1e-6)
+    spec = np.abs(np.fft.rfft(rel_nf - rel_nf.mean()))
+    fr = np.fft.rfftfreq(len(rel_nf), 1 / fps)
+    hf_amp = float(np.sqrt(2 * (spec[fr > 3] ** 2).sum()) / len(rel_nf))  # rms of >3 Hz part, relative lum
     # flashes: rises of >8% relative window luminance within 2 frames
     rises = np.where(np.diff(rel, prepend=rel[0]) > 0.08)[0]
     onsets = [r for k, r in enumerate(rises) if k == 0 or r - rises[k - 1] > 2]
@@ -364,8 +395,9 @@ def run_qc(cfg, pipe, comp_path, idx, stats, el, mode):
              f"| actor integrity, pre-encode (eroded matte, output == decoded source) | {'PASS' if passed['actor_integrity_pre_encode'] else 'FAIL'} | max diff {pre_int:.2e} |",
              f"| actor fully-protected zone untouched (protection = 1) | {'PASS' if passed['actor_fully_protected_zone'] else 'FAIL'} | max diff {prot_max:.2e} |",
              f"| actor integrity, post-encode (ProRes 4444 round trip, 10-bit CV) | info | max {post[:, 0].max():.2f} · p99.9 {post[:, 1].max():.2f} (worst frame) |",
+             f"| codec baseline: untouched source through the same encode (10-bit CV) | info | max {base[:, 0].max():.2f} · p99.9 {base[:, 1].max():.2f} |",
              f"| region containment (diff outside windows) | {'PASS' if passed['region_containment'] else 'FAIL'} | max {outside:.2e} |",
-             f"| flash rule (>3 Hz modulation, flash onsets/s) | {'PASS' if passed['flash_rule_<=3/s'] else 'FAIL'} | >3 Hz rms {hf_amp * 100:.3f} % of window lum · max onsets/s {max_per_s} |",
+             f"| flash rule (>3 Hz oscillation excl. fireworks; broad flash onsets per second) | {'PASS' if passed['flash_rule_<=3/s'] else 'FAIL'} | >3 Hz rms {hf_amp * 100:.3f} % of window lum · max onsets/s {max_per_s} |",
              f"| new clipping in windows | {'PASS' if passed['no_new_clipping'] else 'FAIL'} | {clipped} px total |",
              f"| banding | flag | source is {cfg['_probe']['bit_depth']}-bit {cfg['_probe']['codec']}: banding/blocking in the plate itself is not fought (proxy) |",
              "", "Window luminance change introduced (relative): "
@@ -389,8 +421,9 @@ def run_qc(cfg, pipe, comp_path, idx, stats, el, mode):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("shot")
+    ap.add_argument("--frames", type=int, default=None, help="test only: render just the first N frames")
     g = ap.add_mutually_exclusive_group(required=True)
     g.add_argument("--test", action="store_true")
     g.add_argument("--full", action="store_true")
     a = ap.parse_args()
-    render(a.shot, "test" if a.test else "full")
+    render(a.shot, "test" if a.test else "full", a.frames)

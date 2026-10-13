@@ -192,18 +192,18 @@
         2
       ],
       "peak": [
-        0.2,
-        0.45
+        0.15,
+        0.35
       ],
       "attack_frames": [
         1,
         2
       ],
       "decay_s": [
-        0.3,
-        1.2
+        0.25,
+        0.8
       ],
-      "multi_burst_prob": 0.35,
+      "multi_burst_prob": 0.25,
       "min_burst_gap_s": 0.4,
       "desaturate": 0.35,
       "door_scale": 0.4,
@@ -233,7 +233,8 @@
           0.55,
           1.0
         ]
-      ]
+      ],
+      "follow_up_scale": 0.6
     },
     "faces": {
       "_doc": "less light change and shallower blinking near faces",
