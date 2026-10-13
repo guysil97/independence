@@ -184,7 +184,9 @@
     },
     "fireworks": {
       "_doc": "broad flashes through the windows; at_s = seconds from the start of the working range, null = random",
-      "at_s": null,
+      "at_s": [
+        2.6
+      ],
       "count": [
         0,
         2
@@ -253,6 +255,6 @@
   },
   "test": {
     "length_frames": 75,
-    "start_frame": null
+    "start_frame": 34
   }
 }
