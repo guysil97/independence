@@ -229,7 +229,7 @@ def render(shot: str, mode: str, limit: int | None = None):
         nofw = lin.copy()  # everything except the fireworks (for the >3 Hz oscillation test)
         layers = {"blinds": np.zeros_like(lin), "door": np.zeros_like(lin), "fireworks": np.zeros_like(lin)}
         for k, reg in R["windows"].items():
-            m = masks[k] * keep
+            m = np.where(masks[k] < 1e-3, 0.0, masks[k]) * keep  # hard zero beyond the feather tail
             if m.max() <= 0:
                 continue
             kind = reg.get("kind", "blinds")
@@ -308,7 +308,7 @@ def render(shot: str, mode: str, limit: int | None = None):
 
         # QC numbers (pre-encode)
         d = np.abs(code - src).max(-1)
-        outside = masks["windows_all"] <= 1e-4
+        outside = masks["windows_all"] < 1e-3
         spill_zone = np.zeros(shape, bool)
         Yo = pipe.luminance(pipe.to_linear(code))
         wm = masks["windows_all"] * keep
