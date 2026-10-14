@@ -166,7 +166,7 @@ def _warp(img, flow):
 def _protection(alpha, mc):
     """alpha + soft falloff of `protect_px`: 1 inside the actor, smoothstep to 0 at protect_px."""
     px = float(mc.get("protect_px", 12))
-    hard = (alpha > 0.02).astype(np.uint8)
+    hard = (alpha > float(mc.get("protect_core_alpha", 0.5))).astype(np.uint8)
     dist = cv2.distanceTransform(1 - hard, cv2.DIST_L2, 5)
     t = np.clip(1 - dist / px, 0, 1)
     fall = t * t * (3 - 2 * t)
@@ -219,7 +219,10 @@ def run_refine(cfg):
             wsum += ok
         # wherever the current frame has any actor alpha, protection is exactly 1;
         # temporal smoothing only ever acts on the falloff band outside the actors
-        prot.append(np.maximum(acc / wsum, (union[i] > 0.02).astype(np.float32)))
+        # the actor core (alpha > protect_core_alpha) is always fully protected; across the soft
+        # edge the effect fades with the background share of the pixel (no halo)
+        core = (union[i] > float(mc.get("protect_core_alpha", 0.5))).astype(np.float32)
+        prot.append(np.maximum(np.maximum(acc / wsum, union[i]), core))
     print(f"  temporal {time.time() - t0:.0f}s")
     er = int(mc.get("integrity_erode_px", 3))
     ke = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * er + 1, 2 * er + 1))

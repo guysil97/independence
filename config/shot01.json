@@ -52,7 +52,7 @@
   ],
   "mattes": {
     "sam_model": "base_plus",
-    "dilate_px": 8,
+    "dilate_px": 4,
     "gf_radius": 8,
     "gf_eps": 0.0001,
     "protect_px": 4,
@@ -82,7 +82,8 @@
       ]
     },
     "fill_holes_max_px": 6000,
-    "_protect_doc": "effects fade with the actor's soft alpha + this falloff; 12 px showed as a halo once the street light got bold"
+    "_protect_doc": "effects fade with the actor's soft alpha + this falloff; 12 px showed as a halo once the street light got bold",
+    "protect_core_alpha": 0.5
   },
   "geometry": {
     "_doc": "storefront axis: x_px = x_m*px_per_m (ref frame), y_px = y_ground_px - h_m*px_per_m; blinds_A ~2.0 m wide",
