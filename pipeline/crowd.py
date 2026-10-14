@@ -156,7 +156,8 @@ def build_crowd(cfg: dict, duration_s: float, seed: int) -> list[Passer]:
                 elif k == "flashing_toy" and rng.random() < 0.5:  # headband
                     h, rate, amp, shz = p.height - 0.08, rng.uniform(4, 10), 0, 0
                 else:
-                    h, rate, amp, shz = rng.uniform(0.7, 1.3) * p.height / 1.75, \
+                    hf = c.get("prop_height_frac", [0.4, 0.75])  # fraction of the carrier's height
+                    h, rate, amp, shz = rng.uniform(*hf) * p.height, \
                         (rng.uniform(4, 10) if pat in ("fast_strobe", "sparkle", "chase") else rng.uniform(0.4, 1.2)), \
                         rng.uniform(0.02, 0.08), rng.uniform(0.8, 1.2) * p.gait_hz / 2
                 on = (-1e9, 1e9)

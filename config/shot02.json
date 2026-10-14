@@ -143,7 +143,12 @@
       "glow_stick": 0.04,
       "phone": 0.04,
       "flag": 0.04
-    }
+    },
+    "prop_height_frac": [
+      0.55,
+      1.25
+    ],
+    "_prop_height_doc": "held props: chest height up to raised above the head (celebration)"
   },
   "elements": {
     "light_field": {
