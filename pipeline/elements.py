@@ -76,13 +76,20 @@ class Elements:
                 _, ytop = self.px(0, p.height + float(p.bob(ts_)))
                 _, ygnd = self.px(0, 0)
                 sb = (lf["occl_blur_base_m"] + lf["occl_blur_per_m"] * p.dist) * ppm
-                sx = np.hypot(p.width * ppm / 2.5, sb)
-                gx = np.exp(-0.5 * ((self._xx[0] - xb) / sx) ** 2)
-                gy = 1.0 / (1.0 + np.exp(-(self._yy[:, 0] - ytop) / max(sb * 0.6, 1)))
-                gy *= 1.0 / (1.0 + np.exp((self._yy[:, 0] - ygnd) / max(sb * 0.6, 1)))
                 s = lf["occl_max"] / (1.0 + (p.dist / lf["occl_falloff_m"]) ** 2)
-                O += (s / len(ts)) * gy[:, None] * gx[None, :]
+                if p.dist > lf.get("occl_max_dist_m", 1e9):
+                    s = 0.0  # too far from the glass to cast a readable shadow on the blinds
+                if s > 0 and lf.get("silhouette_shape", False):
+                    O += (s / len(ts)) * self._silhouette(xb, ytop, ygnd, p.width * ppm, sb, ppm)
+                elif s > 0:
+                    sx = np.hypot(p.width * ppm / 2.5, sb)
+                    gx = np.exp(-0.5 * ((self._xx[0] - xb) / sx) ** 2)
+                    gy = 1.0 / (1.0 + np.exp(-(self._yy[:, 0] - ytop) / max(sb * 0.6, 1)))
+                    gy *= 1.0 / (1.0 + np.exp((self._yy[:, 0] - ygnd) / max(sb * 0.6, 1)))
+                    O += (s / len(ts)) * gy[:, None] * gx[None, :]
                 for pr in p.props:
+                    if pr.kind == "flag" and s <= 0:
+                        continue
                     if pr.kind == "flag":  # pole flag: a fluttering soft shadow above the heads
                         xm, hm = cr.prop_position(p, pr, ts_)
                         xf, yf_top = self.px(xm + 0.45, hm)
@@ -94,7 +101,8 @@ class Elements:
                               (1.0 / (1.0 + np.exp((self._yy[:, 0] - yf_bot) / max(sf * 0.6, 1))))
                         O += (lf.get("flag_occl", 0.5) * s * flutter / len(ts)) * gyf[:, None] * gxf[None, :]
                         continue
-                    k = pr.intensity(ts_, for_area=True)
+                    # small point lights may blink (small area); broad glows are time-averaged
+                    k = pr.intensity(ts_, for_area=not lf.get("small_lights_blink", False))
                     if k <= 0:
                         continue
                     xm, hm = cr.prop_position(p, pr, ts_)
@@ -118,6 +126,22 @@ class Elements:
         L = cap * np.tanh(L / cap)  # bright props pressed against the glass saturate softly
         O = np.clip(O * scale, 0, lf["occl_max"])
         return L, O
+
+    def _silhouette(self, xb, ytop, ygnd, w_px, blur, ppm):
+        """Soft head-and-shoulders figure (low-res grid) whose edge softness grows with distance."""
+        b = max(blur, 1.0)
+        sig = lambda d: 1.0 / (1.0 + np.exp(np.clip(-d / (0.45 * b), -60, 60)))  # inside-positive soft step
+        hr = 0.11 * ppm
+        hcy = ytop + 1.15 * hr
+        shoulder = ytop + 2.3 * hr
+        x, y = self._xx, self._yy
+        # torso narrows slightly towards the legs
+        half = w_px / 2 * (1 - 0.25 * np.clip((y - shoulder) / max(ygnd - shoulder, 1), 0, 1))
+        torso = sig(half - np.abs(x - xb)) * sig(y - shoulder) * sig(ygnd - y)
+        r = np.sqrt(((x - xb) / hr) ** 2 + ((y - hcy) / (1.2 * hr)) ** 2)
+        head = sig((1 - r) * hr)
+        neck = sig(0.45 * hr - np.abs(x - xb)) * sig(y - (hcy + hr)) * sig(shoulder + 2 - y)
+        return np.maximum(np.maximum(torso, head), neck).astype(np.float32)
 
     # ---------------------------------------------------------------- door
     def _sprite(self, minor, major, edge):

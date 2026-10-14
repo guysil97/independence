@@ -140,31 +140,34 @@
       "led_glasses": 0.05,
       "glow_stick": 0.04,
       "phone": 0.04,
-      "flag": 0.12
+      "flag": 0.04
     }
   },
   "elements": {
     "light_field": {
       "_doc": "street light behind the blinds: out = plate*(1 + k*T*L)*(1 - T*O)",
-      "downscale": 8,
+      "downscale": 4,
       "shutter_samples": 3,
       "k_blinds": 1.0,
       "k_diffuse_glass": 0.7,
-      "k_gain": 0.16,
+      "k_gain": 0.35,
       "cap": 0.9,
-      "desaturate": 0.5,
-      "sigma_base_m": 0.3,
-      "sigma_per_m": 0.22,
-      "aspect_x": 1.35,
+      "desaturate": 0.15,
+      "sigma_base_m": 0.05,
+      "sigma_per_m": 0.035,
+      "aspect_x": 1.15,
       "falloff_m": 1.5,
-      "occl_max": 0.55,
-      "occl_falloff_m": 1.0,
-      "occl_blur_base_m": 0.12,
-      "occl_blur_per_m": 0.18,
+      "occl_max": 0.5,
+      "occl_falloff_m": 1.2,
+      "occl_blur_base_m": 0.03,
+      "occl_blur_per_m": 0.07,
       "diffuse_extra_blur_px": 30,
-      "flag_occl": 0.6,
+      "flag_occl": 0.35,
       "mode": "additive_relative",
-      "base_blur_px": 40
+      "base_blur_px": 40,
+      "silhouette_shape": true,
+      "small_lights_blink": true,
+      "occl_max_dist_m": 2.5
     },
     "door_bokeh": {
       "_doc": "defocused props through the door glass; sizes from the measured handle glint (31x44 px, edge 15 px)",
@@ -191,10 +194,10 @@
     },
     "fireworks": {
       "_doc": "municipal fireworks show: bursts through the shot (show_rate_per_s), white/gold/blue",
-      "at_s": null,
+      "at_s": [],
       "count": [
         0,
-        2
+        0
       ],
       "peak": [
         0.25,
@@ -255,7 +258,7 @@
         ]
       ],
       "follow_up_scale": 0.7,
-      "show_rate_per_s": 0.7
+      "show_rate_per_s": 0.0
     },
     "faces": {
       "_doc": "less light change and shallower blinking near faces",
@@ -276,7 +279,7 @@
     "quiet_ease_frames": 12,
     "street_glow": {
       "_doc": "parade lights fill the street: broad blue-white lift behind the blinds",
-      "gain": 0.06,
+      "gain": 0.0,
       "color": [
         0.55,
         0.7,
@@ -309,7 +312,7 @@
         4.5
       ],
       "wash_height_m": 2.2,
-      "wash_gain": 0.3,
+      "wash_gain": 0.0,
       "falloff_m": 3.5,
       "desaturate": 0.3,
       "wash_cycle_s": [
@@ -339,7 +342,7 @@
         ]
       ],
       "beams": 3,
-      "beam_gain": 0.5,
+      "beam_gain": 0.0,
       "beam_width_m": 0.35,
       "beam_sweep_hz": [
         0.15,
@@ -379,11 +382,12 @@
           0.45,
           1.0
         ]
-      ]
+      ],
+      "_add_only_doc": "float kept only for its small LED lights (door bokeh)"
     },
     "foam": {
       "_doc": "snow-spray foam puffs catching the street light",
-      "enabled": true,
+      "enabled": false,
       "rate_per_s": 0.6,
       "height_m": [
         1.3,
@@ -405,7 +409,7 @@
     },
     "door_ambient": {
       "_doc": "the lit street seen through the door glass; crowd as soft silhouettes",
-      "level_lin": 0.006,
+      "level_lin": 0.0,
       "color": [
         0.6,
         0.72,
@@ -414,7 +418,7 @@
       "desaturate": 0.3,
       "light_field_gain": 1.5,
       "silhouette_gain": 1.6,
-      "plate_occlusion": 0.3,
+      "plate_occlusion": 0.6,
       "base": 0.3
     }
   },
@@ -422,5 +426,6 @@
     "length_frames": 75,
     "start_frame": 0
   },
-  "scenario": "independence_day_parade"
+  "scenario": "independence_day_add_only",
+  "_scenario_doc": "Add elements only: silhouettes of the crowd and small blinking lights. The existing light and its colour are never changed (no broad lifts, washes, street glow, foam or fireworks \u2014 each can be re-enabled)."
 }
