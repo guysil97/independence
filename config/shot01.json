@@ -122,7 +122,7 @@
     ],
     "distance_m": [
       0.3,
-      5.0
+      4.0
     ],
     "gait_hz": 2.0,
     "gait_amp_m": 0.03,
@@ -155,13 +155,13 @@
       "shutter_samples": 3,
       "k_blinds": 1.0,
       "k_diffuse_glass": 0.7,
-      "k_gain": 0.35,
+      "k_gain": 0.8,
       "cap": 0.9,
       "desaturate": 0.15,
       "sigma_base_m": 0.05,
       "sigma_per_m": 0.035,
       "aspect_x": 1.15,
-      "falloff_m": 1.5,
+      "falloff_m": 2.5,
       "occl_max": 0.5,
       "occl_falloff_m": 1.2,
       "occl_blur_base_m": 0.03,
@@ -172,7 +172,7 @@
       "base_blur_px": 40,
       "silhouette_shape": true,
       "small_lights_blink": true,
-      "occl_max_dist_m": 2.5
+      "occl_max_dist_m": 3.0
     },
     "door_bokeh": {
       "_doc": "defocused props through the door glass; sizes from the measured handle glint (31x44 px, edge 15 px)",
