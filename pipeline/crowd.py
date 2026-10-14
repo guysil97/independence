@@ -58,6 +58,8 @@ class Prop:
                 k = np.floor(self.rate_hz * t + self.phase).astype(np.int64)
                 h = (k * 2654435761 + self.sparkle_seed * 97531) % 1000003
                 v = (h / 1000003.0 > 0.55).astype(np.float64)
+        elif p == "none":
+            return np.zeros_like(t)
         else:
             v = np.ones_like(t)
         return v * on
@@ -99,6 +101,11 @@ PALETTE = {
                      ["fast_strobe", "sparkle", "chase"]),
     "glow_stick":   (0.12, [(0.35, 1.0, 0.45), (1.0, 0.35, 0.75), (0.25, 0.55, 1.0)], 0.4, ["steady"]),
     "phone":        (0.04, [(0.92, 0.96, 1.00)], 3.0, ["phone"]),
+    # Yom Ha'atzmaut evening specifics
+    "star_led":     (0.08, [(0.0, 0.22, 0.72), (0.15, 0.35, 1.0)], 1.1, ["steady", "slow_pulse"]),  # flag blue #0038B8
+    "light_horns":  (0.06, [(1.0, 0.15, 0.25), (0.15, 0.35, 1.0)], 0.6, ["fast_strobe", "chase"]),
+    "led_glasses":  (0.05, [(0.2, 0.45, 1.0), (0.9, 0.95, 1.0)], 0.5, ["chase", "sparkle"]),
+    "flag":         (0.10, [(1.0, 1.0, 1.0)], 0.0, ["none"]),  # non-emissive: a waving shadow above the crowd
 }
 
 
@@ -116,7 +123,7 @@ def build_crowd(cfg: dict, duration_s: float, seed: int) -> list[Passer]:
     t = -c.get("prewarm_s", 25.0)
     while t < duration_s + 2:
         n = rng.integers(c["group_size"][0], c["group_size"][1] + 1)
-        direction = 1 if rng.random() < c.get("left_to_right_prob", 0.5) else -1
+        direction = 1 if rng.random() < c.get("left_to_right_prob", 0.5) else -1  # parade: mostly one way
         group_dist = rng.uniform(*c["distance_m"])
         group_speed = rng.uniform(*c["walk_speed_mps"])
         for _ in range(n):
@@ -136,7 +143,12 @@ def build_crowd(cfg: dict, duration_s: float, seed: int) -> list[Passer]:
                 _, cols, bright, pats = pal[k]
                 pat = pats[rng.integers(len(pats))]
                 col = np.array(cols[rng.integers(len(cols))] if cols else (1, 1, 1), np.float64)
-                if k == "hammer":
+                if k == "flag":  # pole flag waved above the heads
+                    h, rate, amp, shz = p.height + rng.uniform(0.5, 1.0), rng.uniform(1.5, 3.0), \
+                        rng.uniform(0.15, 0.35), rng.uniform(0.3, 0.7)
+                elif k in ("light_horns", "led_glasses"):  # worn on the head
+                    h, rate, amp, shz = p.height - rng.uniform(0.05, 0.15), rng.uniform(4, 9), 0, 0
+                elif k == "hammer":
                     h, rate, amp, shz = rng.uniform(0.9, 1.5) * p.height / 1.75, 1 / rng.uniform(1, 3), \
                         rng.uniform(0.15, 0.35), rng.uniform(0.4, 0.9)
                 elif k == "phone":

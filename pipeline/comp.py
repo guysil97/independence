@@ -259,7 +259,14 @@ def render(shot: str, mode: str, limit: int | None = None):
                 Od = cv2.resize(cv2.warpPerspective(el.door_occlusion(t), Hl, (lw, lh), flags=cv2.INTER_LINEAR,
                                                     borderMode=cv2.BORDER_REPLICATE), (w, h),
                                 interpolation=cv2.INTER_CUBIC) * qi
-                new_b = lin * (1 - T3 * Od[..., None]) + T3 * bok
+                # the lit parade street behind the glass, with the crowd as very soft dark shapes
+                da = e.get("door_ambient", {})
+                amb = np.zeros_like(lin)
+                if da.get("level_lin", 0) > 0:
+                    amb = da["level_lin"] * el.lin_color(da["color"], da.get("desaturate", 0.3)) * \
+                        (1 + da.get("light_field_gain", 1.0) * Lf)
+                sil = np.clip(Od * da.get("silhouette_gain", 1.0), 0, 0.95)[..., None]
+                new_b = lin * (1 - T3 * Od[..., None] * da.get("plate_occlusion", 1.0)) + T3 * (bok + amb * (1 - sil))
                 new = new_b + lin * T3 * fw_gain * e["fireworks"]["door_scale"]
                 layers["door"] += (new_b - lin) * m[..., None]
                 layers["fireworks"] += (new - new_b) * m[..., None]
