@@ -144,7 +144,7 @@ def build_crowd(cfg: dict, duration_s: float, seed: int) -> list[Passer]:
                 pat = pats[rng.integers(len(pats))]
                 col = np.array(cols[rng.integers(len(cols))] if cols else (1, 1, 1), np.float64)
                 if k == "flag":  # pole flag waved above the heads
-                    h, rate, amp, shz = p.height + rng.uniform(0.5, 1.0), rng.uniform(1.5, 3.0), \
+                    h, rate, amp, shz = p.height + rng.uniform(0.5, 1.0), rng.uniform(0.6, 1.4), \
                         rng.uniform(0.15, 0.35), rng.uniform(0.3, 0.7)
                 elif k in ("light_horns", "led_glasses"):  # worn on the head
                     h, rate, amp, shz = p.height - rng.uniform(0.05, 0.15), rng.uniform(4, 9), 0, 0

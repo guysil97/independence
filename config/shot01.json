@@ -160,7 +160,9 @@
       "occl_blur_base_m": 0.12,
       "occl_blur_per_m": 0.18,
       "diffuse_extra_blur_px": 30,
-      "flag_occl": 0.6
+      "flag_occl": 0.6,
+      "mode": "additive_relative",
+      "base_blur_px": 40
     },
     "door_bokeh": {
       "_doc": "defocused props through the door glass; sizes from the measured handle glint (31x44 px, edge 15 px)",
@@ -401,16 +403,17 @@
     },
     "door_ambient": {
       "_doc": "the lit street seen through the door glass; crowd as soft silhouettes",
-      "level_lin": 0.03,
+      "level_lin": 0.006,
       "color": [
         0.6,
         0.72,
         1.0
       ],
       "desaturate": 0.3,
-      "light_field_gain": 1.2,
-      "silhouette_gain": 1.4,
-      "plate_occlusion": 0.3
+      "light_field_gain": 1.5,
+      "silhouette_gain": 1.6,
+      "plate_occlusion": 0.3,
+      "base": 0.3
     }
   },
   "test": {

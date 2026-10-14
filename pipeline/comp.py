@@ -249,7 +249,14 @@ def render(shot: str, mode: str, limit: int | None = None):
                 kk = e["light_field"]["k_" + kind]
                 Lk = Lf if kind == "blinds" else cv2.GaussianBlur(Lf, (0, 0), e["light_field"]["diffuse_extra_blur_px"])
                 Ok = Of if kind == "blinds" else cv2.GaussianBlur(Of, (0, 0), e["light_field"]["diffuse_extra_blur_px"])
-                new_b = lin * (1 + kk * T3 * Lk) * (1 - T3 * Ok[..., None])
+                if e["light_field"].get("mode", "multiplicative") == "additive_relative":
+                    # new light sources (props, floats, foam) ADD light through the gaps, scaled to the
+                    # local backlight level (achromatic) so their colour really reads; bodies and flags
+                    # still block the existing street light multiplicatively
+                    Yb = cv2.GaussianBlur(Y, (0, 0), e["light_field"].get("base_blur_px", 40))[..., None]
+                    new_b = lin * (1 - T3 * Ok[..., None]) + kk * T3 * Lk * Yb
+                else:
+                    new_b = lin * (1 + kk * T3 * Lk) * (1 - T3 * Ok[..., None])
                 new = new_b * (1 + T3 * fw_gain)
                 layers["blinds"] += (new_b - lin) * m[..., None]
                 layers["fireworks"] += (new - new_b) * m[..., None]
@@ -263,8 +270,9 @@ def render(shot: str, mode: str, limit: int | None = None):
                 da = e.get("door_ambient", {})
                 amb = np.zeros_like(lin)
                 if da.get("level_lin", 0) > 0:
-                    amb = da["level_lin"] * el.lin_color(da["color"], da.get("desaturate", 0.3)) * \
-                        (1 + da.get("light_field_gain", 1.0) * Lf)
+                    # structured, not flat: mostly the light field (wash, beams, crowd lights), a little base
+                    amb = da["level_lin"] * (da.get("base", 0.3) * el.lin_color(da["color"], da.get("desaturate", 0.3))
+                                             + da.get("light_field_gain", 1.0) * Lf)
                 sil = np.clip(Od * da.get("silhouette_gain", 1.0), 0, 0.95)[..., None]
                 new_b = lin * (1 - T3 * Od[..., None] * da.get("plate_occlusion", 1.0)) + T3 * (bok + amb * (1 - sil))
                 new = new_b + lin * T3 * fw_gain * e["fireworks"]["door_scale"]

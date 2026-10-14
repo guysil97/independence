@@ -89,7 +89,7 @@ class Elements:
                         _, yf_bot = self.px(0, hm - 0.75)
                         flutter = 0.65 + 0.35 * np.sin(2 * np.pi * (pr.rate_hz * ts_ + pr.phase))
                         sf = (lf["occl_blur_base_m"] + lf["occl_blur_per_m"] * p.dist) * ppm
-                        gxf = np.exp(-0.5 * ((self._xx[0] - xf) / np.hypot(0.5 * ppm * flutter, sf)) ** 2)
+                        gxf = np.exp(-0.5 * ((self._xx[0] - xf) / np.hypot(0.4 * ppm, sf)) ** 2)  # fixed width: no harmonics
                         gyf = (1.0 / (1.0 + np.exp(-(self._yy[:, 0] - yf_top) / max(sf * 0.6, 1)))) * \
                               (1.0 / (1.0 + np.exp((self._yy[:, 0] - yf_bot) / max(sf * 0.6, 1))))
                         O += (lf.get("flag_occl", 0.5) * s * flutter / len(ts)) * gyf[:, None] * gxf[None, :]

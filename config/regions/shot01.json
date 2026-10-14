@@ -91,7 +91,7 @@
     },
     "door_glass": {
       "plane": "storefront",
-      "feather": 10,
+      "feather": 24,
       "poly": [
         [
           1108,
@@ -223,7 +223,7 @@
     },
     "door_edge_frame": {
       "plane": "storefront",
-      "feather": 20,
+      "feather": 30,
       "poly": [
         [
           1100,
