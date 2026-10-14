@@ -34,3 +34,26 @@ own colour, darkening in violet), `<shot>_config_used.json`. Reports:
 * `fireworks.at_s`, `peak`, `decay_s`, `multi_burst_prob`.
 * `faces.radius_px` / `intensity_level` — calmer area around faces.
 * `seed` — a different crowd; `crowd.*` — density, distances, props mix.
+
+
+## Round 2 — "bolder, a big street parade, specifically Yom Ha'atzmaut evening"
+Scenario `independence_day_parade` (config `scenario`, `crowd`, `elements.*`):
+* Dense parade flow: groups every 0.6–2.5 s, mostly one direction, 0.3–5 m from the glass
+  (14–40 people in front of the windows at any moment).
+* Props biased to flag blue (#0038B8) and white: LEDs, light-up Stars of David, flashing
+  horn headbands, LED glasses, inflatable hammers, glow sticks, phone torches.
+* Pole flags waved above the heads: fluttering shadows in the upper blinds (0.6–1.4 Hz).
+* Snow-spray foam puffs catching the street light.
+* A parade float per test: cycling blue/white wash, three sweeping moving-head beams
+  crossing the storefront, LED bokeh in the door glass.
+* The street behind the door glass is lit; the crowd passes as soft silhouettes.
+* Municipal fireworks show (white/gold/blue), never two broad flashes < 0.4 s apart.
+* Light from emitters is now ADDED through the gaps (scaled to the local backlight) so
+  blue/white actually reads; bodies/flags still block the existing light.
+* Halo fix: full protection only in the actor core; the effect fades across the soft
+  edge with the background share of each pixel.
+
+| | window mean change | local p95 change | QC |
+|---|---|---|---|
+| shot01 | +21 … +56 % | ~+250 % (door glass was near-black) | all PASS |
+| shot02 | +9 … +40 % | +36 … +58 % | all PASS |
